@@ -47,7 +47,7 @@ The core challenge is processing the \textbf{sequence of events} that alters the
 
 \section{Temporal State Representation}
 
-To model the path-dependent nature of financial behavior, this specification proposes a \textbf{Memory Module} architecture. This approach aligns with frameworks such as JODIE \cite{jodie2019} and TGN \cite{rossi2020}, which allow the model to maintain a persistent state for each user, capturing historical context (e.g., past volatility experience or trading frequency) beyond immediate neighbors.
+To model the path-dependent nature of financial behavior, this specification proposes a \textbf{Memory Module} architecture. This approach aligns with frameworks such as JODIE \cite{kumar2019} and TGN \cite{rossi2020}, which allow the model to maintain a persistent state for each user, capturing historical context (e.g., past volatility experience or trading frequency) beyond immediate neighbors.
 
 \subsection{Mathematical Formulation}
 Every node $u$ maintains a memory state $S_u(t)$. This state serves as a compressed representation of the user's historical behavior up to time $t$. The update mechanism operates in three steps for every batch of interactions:
@@ -81,7 +81,7 @@ Where $\mathcal{N}(u)$ represents the set of stocks currently held by the user.
 The project execution is divided into three distinct phases.
 
 \subsection{Phase 1: Feature Definition \& Data Sourcing}
-Before constructing the graph, we must define the input features that drive the memory updates. This phase focuses on aggregating three data sources:
+Before constructing the graph, the input features that drive the memory updates must be defined. This phase focuses on aggregating three data sources:
 \begin{itemize}
     \item \textbf{Client Features (Node $U$):} Static data (Risk Profile, AUM) and Historical Transaction Logs (to calculate past turnover rates).
     \item \textbf{Stock Features (Node $V$):} Dynamic time-series data including Price History (OHLC), Trading Volume, and Volatility metrics.
@@ -89,17 +89,17 @@ Before constructing the graph, we must define the input features that drive the 
 \end{itemize}
 
 \subsection{Phase 2: Static Graph Baseline}
-To justify the complexity of a Temporal Graph Network, we must first establish a baseline using a static Graph Neural Network (e.g., GraphSAGE or GCN).
+To justify the complexity of a Temporal Graph Network, a baseline must be established using a static Graph Neural Network (e.g., GraphSAGE or GCN).
 \begin{itemize}
-    \item \textbf{Methodology:} We will treat the data as discrete daily snapshots. For each day $t$, we construct a static graph $G_t$ representing all active positions. We train a GNN to predict the existence of edges in $G_{t+1}$ based solely on the structure of $G_t$.
-    \item \textbf{Justification:} This isolates the value of \textit{connectivity} from the value of \textit{time}. If the Static GNN performs well, it indicates that "what you hold" (network structure) is predictive. If it performs poorly compared to Phase 3, it proves that "when you acted" (temporal sequence) is the dominant factor.
+    \item \textbf{Methodology:} The data will be treated as discrete daily snapshots. For each day $t$, a static graph $G_t$ is constructed representing all active positions. A GNN is trained to predict the existence of edges in $G_{t+1}$ based solely on the structure of $G_t$.
+    \item \textbf{Justification:} This isolates the value of \textit{connectivity} from the value of \textit{time}. If the Static GNN performs well, it indicates that ``what you hold'' (network structure) is predictive. If it performs poorly compared to Phase 3, it proves that ``when you acted'' (temporal sequence) is the dominant factor \cite{feng2019}.
 \end{itemize}
 
 \subsection{Phase 3: Temporal Graph Implementation (TGN)}
 This phase involves the full implementation of the memory-based architecture described in Section 2.
 \begin{itemize}
     \item \textbf{Event Stream Processing:} Unlike the baseline, this model will ingest data as a continuous stream of events $(u, v, t)$.
-    \item \textbf{Memory Module Integration:} Implement the GRU-based state updater. This requires defining the "Message Function" that compresses the features from Phase 1 into the hidden state.
+    \item \textbf{Memory Module Integration:} Implement the GRU-based state updater. This requires defining the ``Message Function'' that compresses the features from Phase 1 into the hidden state.
     \item \textbf{Multi-Head Training:} The output layer will be split into two distinct classifiers trained simultaneously:
     \begin{enumerate}
         \item \textit{Entry Head:} trained using Negative Sampling (random unlinked stocks).
@@ -109,25 +109,30 @@ This phase involves the full implementation of the memory-based architecture des
 
 \begin{thebibliography}{9}
 
-\bibitem{isavi2025}
-H. Isavi, et al.
-\newblock \href{https://cmde.tabrizu.ac.ir/article_20783.html?lang=en}{Predicting Retail Investor Behavior using Dynamic Graph Neural Networks}.
-\newblock \textit{Computational Methods for Differential Equations}, 2025.
+\bibitem{feng2019}
+F. Feng, X. He, et al.
+\newblock \href{https://dl.acm.org/doi/10.1145/3309547}{Temporal Relational Ranking for Stock Prediction}.
+\newblock \textit{ACM Transactions on Information Systems (TOIS)}, 37(2), 2019.
 
-\bibitem{jodie2019}
+\bibitem{kumar2019}
 S. Kumar, X. Zhang, and J. Leskovec.
-\newblock \href{https://arxiv.org/abs/1908.02707}{JODIE: Predicting Dynamic Embedding Trajectory in Temporal Interaction Networks}.
-\newblock \textit{KDD '19}, 2019. (See also: \href{http://snap.stanford.edu/class/cs224w-2019/project/26424787.pdf}{Stanford SNAP Project Implementation}).
+\newblock \href{https://arxiv.org/abs/1908.01207}{JODIE: Predicting Dynamic Embedding Trajectory in Temporal Interaction Networks}.
+\newblock \textit{Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery \& Data Mining (KDD '19)}, 2019.
 
 \bibitem{rossi2020}
 E. Rossi, et al.
 \newblock \href{https://arxiv.org/abs/2006.10637}{Temporal Graph Networks for Deep Learning on Dynamic Graphs}.
-\newblock \textit{arXiv:2006.10637}, 2020.
+\newblock \textit{arXiv preprint arXiv:2006.10637}, 2020.
 
 \bibitem{takahashi2024}
 S. Takahashi, et al.
 \newblock \href{https://arxiv.org/abs/2409.08718}{Dynamic Link and Flow Prediction in Bank Transfer Networks}.
-\newblock \textit{arXiv:2409.08718}, 2024.
+\newblock \textit{arXiv preprint arXiv:2409.08718}, 2024.
+
+\bibitem{najafabadipour2025}
+Z. Najafabadipour, et al.
+\newblock \href{https://cmde.tabrizu.ac.ir/article_20783.html?lang=en}{Predicting Retail Investor Behavior using Dynamic Graph Neural Networks}.
+\newblock \textit{Computational Methods for Differential Equations}, 13(2), 2025.
 
 \end{thebibliography}
 
