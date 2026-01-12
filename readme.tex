@@ -1,0 +1,134 @@
+\documentclass[11pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{titlesec}
+
+% Setup
+\geometry{margin=1in}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    urlcolor=blue,
+    citecolor=blue
+}
+
+% Section Formatting
+\titleformat{\section}{\large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{1em}{}
+
+\title{\textbf{Project Specification: Client Position Forecasting via Dynamic Graphs}}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+    This document outlines the technical specification for predicting client entry and exit points in financial assets. It defines the problem as a link prediction task on a dynamic bipartite graph and provides a theoretical framework for handling temporal dependencies. Specifically, it details the mathematical formulation for State-Dependent Modeling using Temporal Graph Networks.
+\end{abstract}
+
+\section{Problem Definition}
+The objective is to predict the future interactions between \textbf{Clients} and \textbf{Stocks}. In financial markets, a ``position'' is not a static property; it is a temporal event with a distinct start (Entry) and end (Exit).
+
+We formally define the ecosystem as a \textbf{Dynamic Bipartite Graph} $G(t) = (U, V, E(t))$, where:
+\begin{itemize}
+    \item $U$: Set of Client nodes (investors).
+    \item $V$: Set of Stock nodes (assets).
+    \item $E(t)$: Set of edges active at time $t$. An edge $(u, v)$ represents an open position.
+\end{itemize}
+
+The core challenge is processing the \textbf{sequence of events} that alters the graph structure, rather than analyzing static snapshots. This requires a model capable of learning from the evolution of interactions over continuous time.
+
+\section{Temporal State Representation}
+
+To model the path-dependent nature of financial behavior, this specification proposes a \textbf{Memory Module} architecture. This approach aligns with frameworks such as JODIE \cite{jodie2019} and TGN \cite{rossi2020}, which allow the model to maintain a persistent state for each user, capturing historical context (e.g., past volatility experience or trading frequency) beyond immediate neighbors.
+
+\subsection{Mathematical Formulation}
+Every node $u$ maintains a memory state $S_u(t)$. This state serves as a compressed representation of the user's historical behavior up to time $t$. The update mechanism operates in three steps for every batch of interactions:
+
+\subsubsection{Step 1: Message Passing (The Interaction)}
+When an event occurs (e.g., Client $u$ buys Stock $v$ at time $t$), a ``message'' is generated. This message captures the context of the interaction:
+\begin{equation}
+    m_u(t) = \text{MSG}(S_u(t^-), S_v(t^-), \Delta t, \mathbf{e}_{uv})
+\end{equation}
+Where:
+\begin{itemize}
+    \item $S_u(t^-)$: The user's memory state just before the trade.
+    \item $\Delta t$: Time elapsed since the user's last action.
+    \item $\mathbf{e}_{uv}$: Edge features (e.g., transaction value, Unrealized P\&L).
+\end{itemize}
+
+\subsubsection{Step 2: Memory Update (The State Transition)}
+The node's memory is updated using a Recurrent Neural Network (e.g., GRU). This enables the system to update the user's profile in real-time without retraining on the full history:
+\begin{equation}
+    S_u(t) = \text{GRU}(m_u(t), S_u(t^-))
+\end{equation}
+
+\subsubsection{Step 3: Temporal Embedding (The Prediction)}
+To predict a future link (Entry) or link deletion (Exit), a temporal embedding $Z_u(t)$ is generated. This combines the user's internal memory with the current graph structure (their current portfolio):
+\begin{equation}
+    Z_u(t) = \sum_{j \in \mathcal{N}(u)} h(S_u(t), S_j(t), \mathbf{e}_{uj})
+\end{equation}
+Where $\mathcal{N}(u)$ represents the set of stocks currently held by the user.
+
+\section{Implementation Roadmap}
+The project execution is divided into three distinct phases.
+
+\subsection{Phase 1: Feature Definition \& Data Sourcing}
+Before constructing the graph, we must define the input features that drive the memory updates. This phase focuses on aggregating three data sources:
+\begin{itemize}
+    \item \textbf{Client Features (Node $U$):} Static data (Risk Profile, AUM) and Historical Transaction Logs (to calculate past turnover rates).
+    \item \textbf{Stock Features (Node $V$):} Dynamic time-series data including Price History (OHLC), Trading Volume, and Volatility metrics.
+    \item \textbf{Interaction Features (Edge $E$):} Transaction-specific data such as Trade Size, Direction (Buy/Sell), and calculated Unrealized P\&L at the time of the event.
+\end{itemize}
+
+\subsection{Phase 2: Static Graph Baseline}
+To justify the complexity of a Temporal Graph Network, we must first establish a baseline using a static Graph Neural Network (e.g., GraphSAGE or GCN).
+\begin{itemize}
+    \item \textbf{Methodology:} We will treat the data as discrete daily snapshots. For each day $t$, we construct a static graph $G_t$ representing all active positions. We train a GNN to predict the existence of edges in $G_{t+1}$ based solely on the structure of $G_t$.
+    \item \textbf{Justification:} This isolates the value of \textit{connectivity} from the value of \textit{time}. If the Static GNN performs well, it indicates that "what you hold" (network structure) is predictive. If it performs poorly compared to Phase 3, it proves that "when you acted" (temporal sequence) is the dominant factor.
+\end{itemize}
+
+\subsection{Phase 3: Temporal Graph Implementation (TGN)}
+This phase involves the full implementation of the memory-based architecture described in Section 2.
+\begin{itemize}
+    \item \textbf{Event Stream Processing:} Unlike the baseline, this model will ingest data as a continuous stream of events $(u, v, t)$.
+    \item \textbf{Memory Module Integration:} Implement the GRU-based state updater. This requires defining the "Message Function" that compresses the features from Phase 1 into the hidden state.
+    \item \textbf{Multi-Head Training:} The output layer will be split into two distinct classifiers trained simultaneously:
+    \begin{enumerate}
+        \item \textit{Entry Head:} trained using Negative Sampling (random unlinked stocks).
+        \item \textit{Exit Head:} trained specifically on existing edges, using Unrealized P\&L as a primary signal.
+    \end{enumerate}
+\end{itemize}
+
+\begin{thebibliography}{9}
+
+\bibitem{isavi2025}
+H. Isavi, et al.
+\newblock \href{https://cmde.tabrizu.ac.ir/article_20783.html?lang=en}{Predicting Retail Investor Behavior using Dynamic Graph Neural Networks}.
+\newblock \textit{Computational Methods for Differential Equations}, 2025.
+
+\bibitem{jodie2019}
+S. Kumar, X. Zhang, and J. Leskovec.
+\newblock \href{https://arxiv.org/abs/1908.02707}{JODIE: Predicting Dynamic Embedding Trajectory in Temporal Interaction Networks}.
+\newblock \textit{KDD '19}, 2019. (See also: \href{http://snap.stanford.edu/class/cs224w-2019/project/26424787.pdf}{Stanford SNAP Project Implementation}).
+
+\bibitem{rossi2020}
+E. Rossi, et al.
+\newblock \href{https://arxiv.org/abs/2006.10637}{Temporal Graph Networks for Deep Learning on Dynamic Graphs}.
+\newblock \textit{arXiv:2006.10637}, 2020.
+
+\bibitem{takahashi2024}
+S. Takahashi, et al.
+\newblock \href{https://arxiv.org/abs/2409.08718}{Dynamic Link and Flow Prediction in Bank Transfer Networks}.
+\newblock \textit{arXiv:2409.08718}, 2024.
+
+\end{thebibliography}
+
+\end{document}
