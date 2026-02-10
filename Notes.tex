@@ -1,0 +1,229 @@
+This is a comprehensive, compile-ready LaTeX document. It is structured as a high-density "refresher" textbook. It assumes your Master's level background—skipping the "intro" fluff and going straight to the mathematical definitions, derivations, and architectural mechanics that Craig’s list targets.
+You can copy this into Overleaf or any LaTeX editor to generate a PDF.
+\documentclass[10pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{titlesec}
+
+% Page Setup
+\geometry{margin=0.8in}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.5em}
+
+% Colors for Code
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+% Code Style
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+\lstset{style=mystyle}
+
+% Title Formatting
+\titleformat{\section}{\large\bfseries\uppercase}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\bfseries}{}{0em}{}
+
+\title{\textbf{Executive Technical Refresh: Quant & Algo Interview Prep}}
+\author{Personal Reference for VP-Level Review}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Part I: Quantitative Analysis \& Statistics}
+
+\subsection{1. Linear Regression Rigor}
+\textbf{The Assumptions (Gauss-Markov):}
+Standard OLS requires the following conditions for $\hat{\beta}$ to be BLUE (Best Linear Unbiased Estimator):
+\begin{enumerate}
+    \item \textbf{Linearity:} The relationship between $X$ and $Y$ is linear ($Y = X\beta + \epsilon$).
+    \item \textbf{Exogeneity (Independence):} $E[\epsilon | X] = 0$. The error term is not correlated with the regressors.
+    \item \textbf{Homoscedasticity:} $Var(\epsilon | X) = \sigma^2 I$. The variance of error terms is constant.
+    \item \textbf{No Multicollinearity:} Matrix $X$ must have full column rank (invertible $X^T X$).
+    \item \textit{(For Hypothesis Testing only):} Errors are normally distributed $\epsilon \sim N(0, \sigma^2)$.
+\end{enumerate}
+
+\textbf{Derivation of Least Squares (The Calculus):}
+We minimize the Sum of Squared Errors (SSE): $L(\beta) = ||Y - X\beta||^2 = (Y - X\beta)^T (Y - X\beta)$.
+\\
+Expansion:
+$$ L(\beta) = Y^T Y - 2\beta^T X^T Y + \beta^T X^T X \beta $$
+Differentiate w.r.t $\beta$ and set to 0:
+$$ \frac{\partial L}{\partial \beta} = -2X^T Y + 2X^T X \beta = 0 $$
+$$ X^T X \beta = X^T Y \implies \hat{\beta} = (X^T X)^{-1} X^T Y $$
+
+\textbf{Regressing $Y$ on $X$ vs. $X$ on $Y$:}
+They are \textbf{not} inverses. They minimize errors in different dimensions.
+\begin{itemize}
+    \item $Y = \beta_{yx} X + \epsilon$: Minimizes vertical distance (errors in $Y$).
+    \item $X = \beta_{xy} Y + \epsilon$: Minimizes horizontal distance (errors in $X$).
+    \item \textbf{Relationship:} $\beta_{yx} \cdot \beta_{xy} = r^2$ (Correlation squared).
+\end{itemize}
+
+\subsection{2. Robustness \& Outliers}
+\textbf{Definition:} A robust statistic is resistant to errors in the results, produced by deviations from assumptions (e.g., non-normal data).
+\begin{itemize}
+    \item \textbf{Breakdown Point:} The proportion of incorrect observations (e.g., arbitrarily large outliers) an estimator can handle before giving an incorrect result.
+    \item \textit{Example:} The Mean has a breakdown point of 0 (1 bad point ruins it). The Median has a breakdown point of 0.5 (50\%).
+\end{itemize}
+
+\textbf{Handling Outliers:}
+\begin{itemize}
+    \item \textbf{Winsorization:} Capping extreme values at a specific percentile (e.g., 99th).
+    \item \textbf{Trimming:} Removing the top/bottom $k\%$ of data.
+    \item \textbf{Huber Loss:} A loss function that is quadratic for small errors (like MSE) but linear for large errors (like MAE), reducing the penalty for outliers.
+\end{itemize}
+
+\subsection{3. T-Statistics \& Sample Size}
+Formula for T-statistic: $t = \frac{\bar{x} - \mu}{s / \sqrt{n}}$.
+\\
+\textbf{Question:} What happens to the t-statistic if we double the data ($n \to 2n$), assuming mean and variance remain stable?
+\\
+\textbf{Answer:} The standard error ($s/\sqrt{n}$) decreases by a factor of $\sqrt{2}$. Therefore, the t-statistic \textbf{increases} by a factor of $\sqrt{2}$ (approx 1.41). This makes it easier to reject the null hypothesis (significance inflation).
+
+\subsection{4. Probability Puzzles}
+\textbf{Coin Fairness (Binomial approx. to Normal):}
+To test if a coin is fair ($p=0.5$) with $N$ tosses and $k$ heads:
+$$ Z = \frac{k - Np}{\sqrt{N p (1-p)}} $$
+For $N=1000$ (540 Heads): Mean = 500, SD = $\sqrt{1000 \cdot 0.5 \cdot 0.5} = \sqrt{250} \approx 15.8$.
+\\
+Result: $(540 - 500) / 15.8 \approx 2.53\sigma$. This is significant ($p < 0.05$). The coin is likely biased.
+
+\textbf{The Josephus Problem (Survivor in a Circle):}
+$N$ people in a circle, kill every $k$-th person. Where to stand to survive?
+Recursive solution for $k=2$ (kill next person):
+$$ f(2n) = 2f(n) - 1 $$
+$$ f(2n+1) = 2f(n) + 1 $$
+\textit{Trick:} Write $N$ in binary. Rotate the most significant bit to the end. That is the decimal position of the survivor.
+
+\section{Part II: Computer Science \& Python Internals}
+
+\subsection{1. Python Architecture}
+\textbf{The GIL (Global Interpreter Lock):}
+\begin{itemize}
+    \item \textbf{What:} A mutex that prevents multiple native threads from executing Python bytecodes at once.
+    \item \textbf{Why:} Python's memory management is not thread-safe (reference counting).
+    \item \textbf{Impact:} CPU-bound tasks (calculating Pi) do \textbf{not} benefit from multi-threading in Python. I/O-bound tasks (network requests) \textbf{do} benefit (as the lock is released while waiting).
+    \item \textbf{Solution:} Use `multiprocessing` (separate memory space) for CPU tasks.
+\end{itemize}
+
+\textbf{MRO (Method Resolution Order):}
+Python uses the \textbf{C3 Linearization} algorithm to determine the class hierarchy in multiple inheritance.
+\begin{itemize}
+    \item It preserves monotonicity (subclasses always appear before parents).
+    \item Check via: `ClassName.mro()` or `ClassName.__mro__`.
+\end{itemize}
+
+\textbf{Mutability \& Hashing:}
+\begin{itemize}
+    \item \textbf{Dict Keys/Set Elements:} Must be \textit{hashable} (immutable).
+    \item Lists are mutable $\to$ Cannot be hashed $\to$ Cannot be dict keys.
+    \item Tuples are immutable $\to$ Can be hashed (if contents are also immutable).
+\end{itemize}
+
+\subsection{2. Algorithms \& Data Structures}
+\textbf{Pandas Vectorization:}
+Replaces explicit loops with array operations.
+\begin{itemize}
+    \item \textbf{Mechanism:} Built on NumPy, which uses C-level arrays and SIMD (Single Instruction, Multiple Data) CPU operations.
+    \item \textbf{Memory:} NumPy arrays are contiguous blocks of memory (unlike Python lists, which are arrays of pointers to objects).
+\end{itemize}
+
+\textbf{Finding Unique Element (XOR Trick):}
+Given an array where every element appears twice except one. Find the unique one.
+\begin{itemize}
+    \item \textbf{Property:} $A \oplus A = 0$ and $A \oplus 0 = A$.
+    \item \textbf{Solution:} XOR all elements together. The duplicates cancel out; the remainder is the unique number. Time: $O(N)$, Space: $O(1)$.
+\end{itemize}
+
+\section{Part III: Code Snippets (Refresher)}
+
+\subsection{1. Decorators (Memoization Example)}
+A decorator is a function that takes a function and returns a wrapper.
+\begin{lstlisting}[language=Python]
+import functools
+
+def memoize(func):
+    cache = {}
+    @functools.wraps(func) # Preserves metadata (name, docstring)
+    def wrapper(*args):
+        if args not in cache:
+            cache[args] = func(*args)
+        return cache[args]
+    return wrapper
+
+@memoize
+def fib(n):
+    if n < 2: return n
+    return fib(n-1) + fib(n-2)
+\end{lstlisting}
+
+\subsection{2. Generators (Memory Efficiency)}
+Use `yield` to create an iterator instead of building the full list in memory.
+\begin{lstlisting}[language=Python]
+def infinite_sequence():
+    num = 0
+    while True:
+        yield num
+        num += 1
+
+gen = infinite_sequence()
+print(next(gen)) # 0
+print(next(gen)) # 1
+\end{lstlisting}
+
+\subsection{3. Two Sum (Dictionary/Hash Map Approach)}
+Target $O(N)$ complexity using a hash map for lookups.
+\begin{lstlisting}[language=Python]
+def two_sum(nums, target):
+    seen = {}  # Map value -> index
+    for i, num in enumerate(nums):
+        complement = target - num
+        if complement in seen:
+            return [seen[complement], i]
+        seen[num] = i
+    return []
+\end{lstlisting}
+
+\subsection{4. Binary Search (Standard Implementation)}
+Crucial for $O(\log N)$ search in sorted arrays.
+\begin{lstlisting}[language=Python]
+def binary_search(arr, target):
+    left, right = 0, len(arr) - 1
+    while left <= right:
+        mid = (left + right) // 2
+        if arr[mid] == target:
+            return mid
+        elif arr[mid] < target:
+            left = mid + 1
+        else:
+            right = mid - 1
+    return -1
+\end{lstlisting}
+
+\end{document}
